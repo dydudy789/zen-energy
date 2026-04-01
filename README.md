@@ -19,7 +19,7 @@ The design aligns with typical Azure-based data platforms and assumes:
 
 ## Part 1 - Pipeline Architecture Summary
 
-![Pipeline Diagram](diagram/pipeline.png)
+![Pipeline Diagram](./diagram/pipeline_architecture.png)
 
 - To ingest daily files received via email, a scheduled Databricks Workflow job can perform a `GET` request to the **Microsoft Graph API** which will locate the email using sender + date filters and retrieve the attachments using expected file name. The attachments can then be uploaded to Azure Data Lake raw folder using Azure SDK methods.
 
@@ -34,18 +34,18 @@ The pipeline follows a medallion architecture with bronze for raw ingestion, sil
 
 
 **region_demand_raw** (Bronze)
-Grain: One row per (interval_datetime, region_id).
-Partitioned by derived ingestion_date column to enable efficient incremental processing. 
-interval_datetime is set as string for safer landing. 
+- Grain: One row per (interval_datetime, region_id).
+- Partitioned by derived column ingestion_date to enable efficient incremental processing. 
+- interval_datetime is set as string for safer landing. 
 
 **unit_dispatch_raw** (Bronze)
-Grain: One row per (interval_datetime, duid).
-Partitioned by derived ingestion_date column to enable efficient incremental processing to silver layer.
-interval_datetime is set as string for safer landing. 
+- Grain: One row per (interval_datetime, duid).
+- Partitioned by derived column ingestion_date to enable efficient incremental processing to silver layer.
+- interval_datetime is set as string for safer landing. 
 
 **reference_generators_raw** (Bronze)
-Grain: One row per duid
-No partition required as it is a small reference table. 
+- Grain: One row per duid
+- No partition required as it is a small reference table. 
 
 **region_demand_interval** (Silver)
 Grain: One row per (interval_datetime, region_id).
