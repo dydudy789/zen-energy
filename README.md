@@ -48,36 +48,38 @@ The pipeline follows a medallion architecture with bronze for raw ingestion, sil
 - No partition required as it is a small reference table. 
 
 **region_demand_interval** (Silver)
-Grain: One row per (interval_datetime, region_id).
-Partitioned by derived dispatch_date column to help with efficient querying of dispatch data.
+- Grain: One row per (interval_datetime, region_id).
+- Partitioned by derived column dispatch_date to help with efficient querying of dispatch data.
 
 **unit_dispatch_interval** (Silver)
-Grain: One row per (interval_datetime, duid).
-Partitioned by derived dispatch_date column to help with efficient querying of dispatch data.
+- Grain: One row per (interval_datetime, duid).
+- Partitioned by derived column dispatch_date to help with efficient querying of dispatch data.
 
 **reference_generators_scd2** (Silver)
-Grain: One row per (duid, effective_from) — representing a generator's attributes for a specific time window.
-No partitioning required as it is a small reference table.
-Extra columns effective_from and effective_to are created for scd type 2. 
+- Grain: One row per (duid, effective_from) — representing a generator's attributes for a specific time window.
+- No partitioning required as it is a small reference table.
+- Extra columns effective_from and effective_to are created for scd type 2. 
 
 **unit_dispatch_enriched_mv** (Silver)
-Grain: One row per dispatched generating unit (duid) per 5-minute dispatch interval.
-No partitioning as this is a materilized view. 
-
-
-
+- Grain: One row per dispatched generating unit (duid) per 5-minute dispatch interval.
+- No partitioning as this is a materilized view. 
 
 **region_price_summary_v** (Gold)
-Grain: One row per NEM region, aggregated across all intervals in the query window.
-Partition reasoning: No partitioning needed — this is a small aggregated summary with at most one row per region.
+- Grain: One row per NEM region, aggregated across all intervals in the query window.
+- No partitioning needed — this is a small aggregated summary with at most one row per region.
 
 **generation_mix_by_fuel_type_v** (Gold)
-Grain: One row per (region_id, fuel_type_category) — representing each fuel group's share of total regional dispatch across the full query window.
-Partition reasoning: No partitioning needed.
+- Grain: One row per (region_id, fuel_type_category) — representing each fuel group's share of total regional dispatch across the full query window.
+- No partitioning needed.
 
 **top_10_generators_by_dispatch_volume_v** (Gold)
-Grain: One row per duid (generating unit), ranked by total MWh dispatched across the full query window. Result is limited to top 10.
-Partition reasoning: No partitioning needed.
+- Grain: One row per duid (generating unit), ranked by total MWh dispatched. Result is limited to top 10.
+- No partitioning needed.
+
+
+## Part 3 - Report Queries
+
+
 
 ### Storage Pattern
 Files are stored in ADLS using a **date-partitioned structure**: raw/aemo/unit_dispatch/YYYY/MM/DD/raw_unit_dispatch.csv
