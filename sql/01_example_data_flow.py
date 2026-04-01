@@ -19,8 +19,7 @@ region_demand_raw = (
     .option("header", True)
     .option("inferSchema", True)
     .csv("nem_data/raw_dispatch_intervals.csv")
-    .withColumn("source_file_name", F.input_file_name())
-    .withColumn("ingested_at", F.current_timestamp())
+    .withColumn("ingestion_date", F.current_date())
 )
 
 unit_dispatch_raw = (
@@ -28,18 +27,15 @@ unit_dispatch_raw = (
     .option("header", True)
     .option("inferSchema", True)
     .csv("nem_data/raw_unit_dispatch.csv")
-    .withColumn("source_file_name", F.input_file_name())
-    .withColumn("ingested_at", F.current_timestamp())
+    .withColumn("ingestion_date", F.current_date())
 )
-
 
 reference_generators_raw = (
     spark.read
     .option("header", True)
     .option("inferSchema", True)
     .csv("nem_data/reference_generators.csv")
-    .withColumn("source_file_name", F.input_file_name())
-    .withColumn("ingested_at", F.current_timestamp())
+    .withColumn("ingestion_date", F.current_date())
 )
 
 print("BRONZE: region_demand_raw")
@@ -69,9 +65,7 @@ region_demand_interval = (
         "region_id",
         F.col("rrp").cast("double").alias("rrp"),
         F.col("total_demand_mw").cast("double").alias("total_demand_mw"),
-        F.col("scheduled_generation_mw").cast("double").alias("scheduled_generation_mw"),
-        "source_file_name",
-        "ingested_at"
+        F.col("scheduled_generation_mw").cast("double").alias("scheduled_generation_mw")
     )
     .filter(
         F.col("interval_datetime").isNotNull() &
@@ -95,8 +89,7 @@ reference_generators_scd2 = (
         "owner",
         "registered_capacity_mw",
         "effective_from",
-        "effective_to",
-        "source_file_name"
+        "effective_to"
     )
 )
 
@@ -112,9 +105,7 @@ unit_dispatch_interval = (
         "fuel_type",
         "region_id",
         "duid",
-        F.col("dispatch_mw").cast("double").alias("dispatch_mw"),
-        "source_file_name",
-        "ingested_at"
+        F.col("dispatch_mw").cast("double").alias("dispatch_mw")
     ) )
 
   

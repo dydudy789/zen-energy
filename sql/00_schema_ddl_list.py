@@ -12,10 +12,10 @@ CREATE TABLE IF NOT EXISTS bronze.region_demand_raw (
     rrp DOUBLE,
     total_demand_mw DOUBLE,
     scheduled_generation_mw DOUBLE,
-    source_file_name STRING,
-    ingested_at TIMESTAMP
+    ingestion_date DATE
 )
-USING DELTA;
+USING DELTA
+PARTITIONED BY (ingestion_date);
 
 
 CREATE TABLE IF NOT EXISTS bronze.unit_dispatch_raw (
@@ -25,10 +25,10 @@ CREATE TABLE IF NOT EXISTS bronze.unit_dispatch_raw (
     dispatch_mw DOUBLE,
     availability_mw DOUBLE,
     fuel_type STRING,
-    source_file_name STRING,
-    ingested_at TIMESTAMP
+    ingestion_date DATE
 )
-USING DELTA;
+USING DELTA
+PARTITIONED BY (ingestion_date);
           
 
 CREATE TABLE IF NOT EXISTS bronze.reference_generators_raw (
@@ -37,8 +37,7 @@ CREATE TABLE IF NOT EXISTS bronze.reference_generators_raw (
     fuel_type STRING,
     region_id STRING,
     registered_capacity_mw DOUBLE,
-    owner STRING,
-    ingested_at TIMESTAMP
+    owner STRING
 )
 USING DELTA;
           
@@ -65,9 +64,7 @@ CREATE TABLE IF NOT EXISTS silver.region_demand_interval (
     region_id STRING,
     rrp DOUBLE,
     total_demand_mw DOUBLE,
-    scheduled_generation_mw DOUBLE,
-    source_file_name STRING,
-    ingested_at TIMESTAMP)
+    scheduled_generation_mw DOUBLE)
 USING DELTA
 PARTITIONED BY (dispatch_date)
           
@@ -77,13 +74,29 @@ CREATE TABLE IF NOT EXISTS silver.unit_dispatch_interval (
     dispatch_date DATE,
     duid STRING, dispatch_mw DOUBLE, 
     availability_mw DOUBLE,
-    fuel_type STRING,
-    source_file_name STRING, 
-    ingested_at TIMESTAMP ) 
+    fuel_type STRING) 
     USING DELTA PARTITIONED BY (dispatch_date) 
 
 
-
+CREATE OR REPLACE MATERIALIZED VIEW silver.unit_dispatch_enriched_mv
+AS
+SELECT
+    u.interval_datetime,
+    u.dispatch_date,
+    u.region_id,
+    u.duid,
+    u.dispatch_mw,
+    u.availability_mw,
+    r.station_name,
+    r.fuel_type,
+    r.owner,
+    r.registered_capacity_mw
+FROM silver.unit_dispatch_interval u
+LEFT JOIN silver.reference_generators_scd2 r
+    ON  u.duid = r.duid
+    AND u.interval_datetime >= r.effective_from
+    AND u.interval_datetime <  r.effective_to;
+          
 # =========================
 # GOLD TABLES
 # =========================

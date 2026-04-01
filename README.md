@@ -15,34 +15,69 @@ The design aligns with typical Azure-based data platforms and assumes:
 
 ---
 
-## Architecture Summary
 
-The pipeline ingests, processes, and models three key datasets:
 
-1. **Daily email-delivered data (raw_unit_dispatch.csv)**
-2. **Dispatch intervals (time-series data)**
-3. **Reference generator data (dimension data)**
+## Part 1 - Pipeline Architecture Summary
 
-Data flows through a standard **Bronze → Silver → Gold** architecture:
-- **Bronze**: Raw ingestion (minimal transformation)
-- **Silver**: Cleaned, validated, structured data
-- **Gold**: Business-ready datasets for reporting and BI
+![Pipeline Diagram](diagram/pipeline.png)
 
----
+- To ingest daily files received via email, a scheduled Databricks Workflow job can perform a `GET` request to the **Microsoft Graph API** which will locate the email using sender + date filters and retrieve the attachments using expected file name. The attachments can then be uploaded to Azure Data Lake raw folder using Azure SDK methods.
 
-## Email Ingestion (raw_unit_dispatch)
+- AEMO data on regional demand and unit dispatch data can be stored in ADLS using a **date-partitioned structure**: raw/aemo/unit_dispatch/YYYY/MM/DD/raw_unit_dispatch.csv. The partitioning will help with lifecycle management (e.g. different tiering by year) and observability. These files are ingested into a bronze delta table which has minimal change except for a derived ingestion_date column. When processing into silver, data will be cleaned and although not detected in this dataset null values may be excluded and duplicates removed. Two silver tables are joined in the materilized view unit_dispatch_enriched_mv to prevent re-execution of joins in upstream reports and queries by analysts. The cleaned silver tables are then aggregated into report-ready views in the gold layer, which can directly connect to BI reports.
 
-To ingest daily files received via email:
+- A pipeline will copy the full reference generators data into ADLS raw folder on schedule, each time overwriting the previous CSV. It is ingested into reference_generators_raw. In order to maintain a slowly chaning dimension type 2, the silver layer table will have columns "effective_from" and "effective_to". A pipeline will merge from raw, inserting new rows, closing off rows using "effective_to" and inserting new rows for updated rows, and closing off rows if some rows were deleted in the source. 
 
-- A **scheduled Databricks Workflow job** performs a `GET` request to the **Microsoft Graph API**
-- The job:
-  1. Locates the email using sender + date filters
-  2. Retrieves the attachment using the expected file name
-- Attachments are:
-  - Retrieved in **Base64 format**
-  - Decoded and uploaded to ADLS using Azure SDK methods:
-    - `append_data`
-    - `flush_data`
+
+## Part 2 - Data Model
+
+The pipeline follows a medallion architecture with bronze for raw ingestion, silver for cleaned and enriched data, and gold for report-ready aggregations. The central silver table is unit_dispatch_enriched_mv, which pre-joins the 5-minute dispatch fact (unit_dispatch_interval) with generator reference attributes (reference_generators_scd2) using a point-in-time SCD2 join — meaning every downstream gold view gets fuel type, owner, station name, and registered capacity without needing to perform any joins itself. Each of the three gold views maps directly to one report question with no additional transformation required at query time. 
+
+
+**region_demand_raw** (Bronze)
+Grain: One row per (interval_datetime, region_id).
+Partitioned by derived ingestion_date column to enable efficient incremental processing. 
+interval_datetime is set as string for safer landing. 
+
+**unit_dispatch_raw** (Bronze)
+Grain: One row per (interval_datetime, duid).
+Partitioned by derived ingestion_date column to enable efficient incremental processing to silver layer.
+interval_datetime is set as string for safer landing. 
+
+**reference_generators_raw** (Bronze)
+Grain: One row per duid
+No partition required as it is a small reference table. 
+
+**region_demand_interval** (Silver)
+Grain: One row per (interval_datetime, region_id).
+Partitioned by derived dispatch_date column to help with efficient querying of dispatch data.
+
+**unit_dispatch_interval** (Silver)
+Grain: One row per (interval_datetime, duid).
+Partitioned by derived dispatch_date column to help with efficient querying of dispatch data.
+
+**reference_generators_scd2** (Silver)
+Grain: One row per (duid, effective_from) — representing a generator's attributes for a specific time window.
+No partitioning required as it is a small reference table.
+Extra columns effective_from and effective_to are created for scd type 2. 
+
+**unit_dispatch_enriched_mv** (Silver)
+Grain: One row per dispatched generating unit (duid) per 5-minute dispatch interval.
+No partitioning as this is a materilized view. 
+
+
+
+
+**region_price_summary_v** (Gold)
+Grain: One row per NEM region, aggregated across all intervals in the query window.
+Partition reasoning: No partitioning needed — this is a small aggregated summary with at most one row per region.
+
+**generation_mix_by_fuel_type_v** (Gold)
+Grain: One row per (region_id, fuel_type_category) — representing each fuel group's share of total regional dispatch across the full query window.
+Partition reasoning: No partitioning needed.
+
+**top_10_generators_by_dispatch_volume_v** (Gold)
+Grain: One row per duid (generating unit), ranked by total MWh dispatched across the full query window. Result is limited to top 10.
+Partition reasoning: No partitioning needed.
 
 ### Storage Pattern
 Files are stored in ADLS using a **date-partitioned structure**: raw/aemo/unit_dispatch/YYYY/MM/DD/raw_unit_dispatch.csv
