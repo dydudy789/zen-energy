@@ -13,6 +13,10 @@ The design aligns with typical Azure-based data platforms and assumes:
 - Databricks is configured with a **registered Service Principal in Azure**
 - Email ingestion is performed via **Microsoft Outlook**, using the **Microsoft Graph API**
 
+Microsoft Graph API and “get” request: [Graph API](https://learn.microsoft.com/en-us/graph/api/attachment-get?view=graph-rest-1.0&tabs=http)
+
+Azure SDK method calls: [Azure SDK](https://azuresdkdocs.z19.web.core.windows.net/python/azure-storage-file-datalake/12.21.0/index.html)
+
 ---
 
 
@@ -79,6 +83,9 @@ The pipeline follows a medallion architecture with bronze for raw ingestion, sil
 
 ## Part 3 - Report Queries
 
+**region_price_summary_v** (Gold)
+
+Aggregates all intervals in the dataset with no date filter applied — the assumption is the source table is already scoped to the relevant reporting period. The price cap threshold of $16,600/MWh reflects the AEMO market price cap as of 2024.
 
 
 ### Storage Pattern
