@@ -54,7 +54,7 @@ region_demand_interval = (
 # GOLD LAYER
 # =========================
 
-PRICE_CAP = 15000.0
+PRICE_CAP = 17500.0
 
 gold_regional_price_summary_v = (
     region_demand_interval

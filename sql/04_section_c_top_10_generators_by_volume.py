@@ -143,7 +143,7 @@ top_10_generators_by_dispatch_volume = (
     .select(
         F.col("station_name").alias("station"),
         "owner",
-        F.col("fuel_type").alias("fuel_type"),
+        F.col("fuel_type"),
         F.col("region_id").alias("region"),
         "total_dispatch_mwh",
         "capacity_factor_pct"

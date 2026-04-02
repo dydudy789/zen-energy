@@ -85,7 +85,19 @@ The pipeline follows a medallion architecture with bronze for raw ingestion, sil
 
 **region_price_summary_v** (Gold)
 
-Aggregates all intervals in the dataset with no date filter applied — the assumption is the source table is already scoped to the relevant reporting period. The price cap threshold of $16,600/MWh reflects the AEMO market price cap as of 2024.
+Used pyspark aggregation functions on the silver table region_demand_interval to get summary statistics (average, min, max, sum). The price cap threshold of $17,500/MWh reflects the AEMO market price cap as of 2024-25.
+
+AEMO price cap: [AEMO](https://www.aemc.gov.au/news-centre/media-releases/2024-25-market-price-cap-now-available)
+
+
+**generation_mix_by_fuel_type** (Gold)
+
+For aggregation using the new category 'RENEWABLES', a new column fuel_type_category was created. total_dispatch_mw was calculated by summing dispatch_mw by region and fuel_type_category. In the next step, a window function was used to get total dispatch of each region, and the number by fuel type attained in the previous step was divided by this total to get the percentage by fuel type for each region.
+
+
+**top 10 generators by volume** (Gold)
+
+For each unit, the dispatch values were summed to get the total dispatch. Then it was multiplied by 5/60 to convert the rate MW to energy MWH. The maximum possible mwh was calculated the same way but using registered_capacity_mw. Then, the capacity factor was calculated by getting the percentage of total_dispatch_mwh of max_possible_mwh. 
 
 
 ### Storage Pattern
