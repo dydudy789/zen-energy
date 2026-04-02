@@ -17,6 +17,9 @@ Microsoft Graph API and “get” request: [Graph API](https://learn.microsoft.c
 
 Azure SDK method calls: [Azure SDK](https://azuresdkdocs.z19.web.core.windows.net/python/azure-storage-file-datalake/12.21.0/index.html)
 
+
+Claude was used to assist with creating the codes in this project.
+
 ---
 
 
@@ -97,7 +100,7 @@ AEMO price cap: [AEMO](https://www.aemc.gov.au/news-centre/media-releases/2024-2
 
 ![generation_mix](./diagram/percentage_of_regional_dispatch.png)
 
-For aggregation using the new category 'RENEWABLES', a new column fuel_type_category was created. total_dispatch_mw was calculated by summing dispatch_mw by region and fuel_type_category. In the next step, a window function was used to get total dispatch of each region, and the number by fuel type attained in the previous step was divided by this total to get the percentage by fuel type for each region.
+For aggregation using the new category 'RENEWABLES', a new column fuel_type_category was created. To get total generation for each fuel type in each region, total_dispatch_mw was calculated by summing dispatch_mw grouped by region and fuel_type_category. In the next step, a window function was used to get total dispatch of each region, and then total_dispatch_mw attained in the previous step was divided by this total to get the percentage by fuel type for each region.
 
 
 ### Table C: Top 10 generators by volume (Gold)
