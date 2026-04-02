@@ -138,7 +138,7 @@ top_10_generators_base = (
     )
 )
 
-top_10_generators_by_dispatch_volume = (
+top_10_generators_by_dispatch_volume_v = (
     top_10_generators_base
     .select(
         F.col("station_name").alias("station"),
@@ -152,6 +152,11 @@ top_10_generators_by_dispatch_volume = (
     .limit(10)
 )
 
-top_10_generators_by_dispatch_volume.show(truncate=False)
+top_10_generators_by_dispatch_volume_v.show(truncate=False)
+
+
+# For each unit, the dispatch values were summed to get the total dispatch. Then it was multiplied by 5/60 to convert the rate MW to energy MWH. 
+# The maximum possible mwh was calculated the same way but using registered_capacity_mw. Then, the capacity factor was calculated by getting 
+# the percentage of total_dispatch_mwh of max_possible_mwh. 
 
 spark.stop()

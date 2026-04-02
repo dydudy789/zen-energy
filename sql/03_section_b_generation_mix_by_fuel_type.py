@@ -67,7 +67,7 @@ generation_mix_by_fuel_type_base = (
 
 region_window = Window.partitionBy("region_id")
 
-generation_mix_by_fuel_type = (
+generation_mix_by_fuel_type_v = (
     generation_mix_by_fuel_type_base
     .withColumn(
         "region_total_dispatch_mw",
@@ -88,6 +88,12 @@ generation_mix_by_fuel_type = (
     .orderBy("region_id", F.desc("percentage_of_total_regional_dispatch"))
 )
 
-generation_mix_by_fuel_type.show()
+generation_mix_by_fuel_type_v.show()
+
+
+# For aggregation using the new category 'RENEWABLES', a new column fuel_type_category was created. 
+# total_dispatch_mw was calculated by summing dispatch_mw by region and fuel_type_category. In the next step, 
+# a window function was used to get total dispatch of each region, and the number by fuel type attained in the previous step 
+# was divided by this total to get the percentage by fuel type for each region.
 
 spark.stop()

@@ -71,4 +71,7 @@ gold_regional_price_summary_v = (
 
 gold_regional_price_summary_v.show(truncate=False)
 
+# Used pyspark aggregation functions on the silver table region_demand_interval to get summary statistics (average, min, max, sum). 
+# The price cap threshold of $17,500/MWh reflects the AEMO market price cap as of 2024-25.
+
 spark.stop()
