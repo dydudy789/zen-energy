@@ -83,7 +83,7 @@ The pipeline follows a medallion architecture with bronze for raw ingestion, sil
 
 ## Part 3 - Report Queries
 
-**region_price_summary_v** (Gold)
+### Table A: Region price summary (Gold)
 
 ![regional_summary](./diagram/regional_summary.png)
 
@@ -93,14 +93,14 @@ Used pyspark aggregation functions on the silver table region_demand_interval to
 AEMO price cap: [AEMO](https://www.aemc.gov.au/news-centre/media-releases/2024-25-market-price-cap-now-available)
 
 
-**generation_mix_by_fuel_type** (Gold)
+### Table B: Generation mix by fuel type and region (Gold)
 
 ![generation_mix](./diagram/percentage_of_regional_dispatch.png)
 
 For aggregation using the new category 'RENEWABLES', a new column fuel_type_category was created. total_dispatch_mw was calculated by summing dispatch_mw by region and fuel_type_category. In the next step, a window function was used to get total dispatch of each region, and the number by fuel type attained in the previous step was divided by this total to get the percentage by fuel type for each region.
 
 
-**top 10 generators by volume** (Gold)
+### Table C: Top 10 generators by volume (Gold)
 
 ![top_10_generators](./diagram/top_10_generators_by_vol.png)
 
